@@ -1,0 +1,17 @@
+data:
+  train_path: data/train.txt
+  test_path: data/test.txt
+  dev_path: data/dev.txt
+
+  train_pre_path: data/train_pre.txt
+  test_pre_path: data/test_pre.txt
+  dev_pre_path: data/dev_pre.txt
+
+  class_path: data/class.txt
+  stopwords_path: data/stopwords.txt
+
+  random_model_save_path: random.pkl
+  tf_save_path: tf.pkl
+
+
+

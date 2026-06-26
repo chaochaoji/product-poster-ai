@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product AI — 商品识别 &amp; 生图</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f5;color:#333;line-height:1.6}
+.header{background:linear-gradient(135deg,#1a1a2e,#16213e);color:#fff;padding:32px 24px;text-align:center}
+.header h1{font-size:28px;margin-bottom:8px}
+.header p{opacity:.7;font-size:14px}
+.container{max-width:960px;margin:0 auto;padding:24px}
+.steps{display:flex;gap:12px;margin-bottom:32px}
+.step{flex:1;padding:16px;border-radius:12px;background:#fff;text-align:center;font-size:14px;border:2px solid #e0e0e0;transition:all .3s}
+.step .num{display:inline-block;width:28px;height:28px;line-height:28px;border-radius:50%;background:#e0e0e0;color:#666;font-weight:700;font-size:13px;margin-bottom:6px}
+.step.active{border-color:#4f46e5;background:#eef2ff}
+.step.active .num{background:#4f46e5;color:#fff}
+.step.done{border-color:#22c55e;background:#f0fdf4}
+.step.done .num{background:#22c55e;color:#fff}
+.card{background:#fff;border-radius:12px;padding:24px;margin-bottom:20px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.card h3{font-size:18px;margin-bottom:16px;color:#1a1a2e}
+.upload-zone{border:2px dashed #d0d5dd;border-radius:12px;padding:48px 24px;text-align:center;cursor:pointer;transition:all .3s;background:#fafbfc}
+.upload-zone:hover,.upload-zone.dragover{border-color:#4f46e5;background:#eef2ff}
+.upload-zone img{max-width:300px;max-height:300px;border-radius:8px;margin-top:16px}
+.upload-zone .placeholder{font-size:48px;margin-bottom:12px}
+.upload-zone .hint{color:#999;font-size:13px}
+.btn{display:inline-flex;align-items:center;gap:8px;padding:10px 24px;border-radius:8px;border:none;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s}
+.btn-primary{background:#4f46e5;color:#fff}
+.btn-primary:hover{background:#4338ca}
+.btn-primary:disabled{background:#a5b4fc;cursor:not-allowed}
+.btn-success{background:#22c55e;color:#fff}
+.btn-success:hover{background:#16a34a}
+.btn-outline{background:#fff;color:#4f46e5;border:1px solid #4f46e5}
+.btn-outline:hover{background:#eef2ff}
+.btn-sm{padding:6px 16px;font-size:13px}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.json-view{background:#1e1e2e;color:#cdd6f4;padding:16px;border-radius:8px;font-family:monospace;font-size:13px;overflow-x:auto;white-space:pre-wrap;max-height:400px;overflow-y:auto;line-height:1.5}
+.prompt-display{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:16px;font-size:14px;max-height:300px;overflow-y:auto;white-space:pre-wrap;color:#334155;line-height:1.7}
+.result-image{max-width:100%;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,.15)}
+.badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:500}
+.badge-success{background:#dcfce7;color:#166534}
+.badge-info{background:#dbeafe;color:#1e40af}
+.spinner{display:inline-block;width:16px;height:16px;border:2px solid #e0e0e0;border-top-color:#4f46e5;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hidden{display:none!important}
+.selling-point-tag{display:inline-block;padding:4px 12px;margin:3px;background:#eef2ff;color:#4f46e5;border-radius:6px;font-size:13px}
+.tabs{display:flex;gap:4px;margin-bottom:12px}
+.tab{padding:8px 16px;border:none;background:#f1f5f9;cursor:pointer;border-radius:8px 8px 0 0;font-size:13px;transition:all .2s}
+.tab.active{background:#4f46e5;color:#fff}
+.status-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;margin-bottom:16px;font-size:14px}
+.info-box{padding:12px 16px;border-radius:8px;background:#fffbeb;border:1px solid #fde68a;font-size:13px;margin-bottom:16px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🛍️ Product AI</h1>
+  <p>商品图片 → 属性识别 → 生图提示词 → AI 出图</p>
+</div>
+
+<div class="container">
+
+  <!-- 步骤条 -->
+  <div class="steps">
+    <div class="step active" id="step1"><div class="num">1</div><div>上传图片 &amp; 识别</div></div>
+    <div class="step" id="step2"><div class="num">2</div><div>生成提示词</div></div>
+    <div class="step" id="step3"><div class="num">3</div><div>AI 出图</div></div>
+  </div>
+
+  
+
+  <!-- 第一步：上传与识别 -->
+  <div class="card" id="card1">
+    <h3>📸 第一步：上传商品图片</h3>
+    <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+      <div id="uploadPlaceholder">
+        <div class="placeholder">🖼️</div>
+        <div>点击上传或拖拽商品图片</div>
+        <div class="hint">支持 JPG / PNG / WebP</div>
+      </div>
+      <img id="previewImg" class="hidden" />
+    </div>
+    <input type="file" id="fileInput" accept="image/*" class="hidden" onchange="handleFile(event)" />
+    <div class="btn-group">
+      <button class="btn btn-primary" id="recognizeBtn" disabled onclick="doRecognize()">识别商品</button>
+    </div>
+    <div id="recognizeStatus" class="hidden" style="margin-top:16px"></div>
+    <div id="recognizeResult" class="hidden" style="margin-top:16px"></div>
+  </div>
+
+  <!-- 第二步：生成提示词 -->
+  <div class="card hidden" id="card2">
+    <h3>📝 第二步：生成生图提示词</h3>
+    <p style="color:#666;font-size:13px;margin-bottom:8px">选择用途和平台，平台风格将融入提示词</p>
+    <div class="tabs" id="usageTabs">
+      <button class="tab active" data-usage="main">主图（白底）</button>
+      <button class="tab" data-usage="scene">场景图（生活化）</button>
+      <button class="tab" data-usage="selling_point">卖点图（带文案）</button>
+    </div>
+    <div style="margin:8px 0;font-size:13px;color:#666">平台风格：</div>
+    <div class="tabs" id="platformTabs">
+      <button class="tab" data-platform="">通用</button>
+      <button class="tab active" data-platform="taobao">🏷️ 淘宝</button>
+      <button class="tab" data-platform="jd">📦 京东</button>
+      <button class="tab" data-platform="douyin">🎵 抖音</button>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" id="genPromptBtn" onclick="doGeneratePrompt()">生成提示词</button>
+      <button class="btn btn-outline btn-sm" onclick="doGenerateAll()">一键三种</button>
+    </div>
+    <div id="promptResult" class="hidden" style="margin-top:16px"></div>
+  </div>
+
+  <!-- 第三步：生图 -->
+  <div class="card hidden" id="card3">
+    <h3>🎨 第三步：AI 出图</h3>
+    <div class="btn-group">
+      <button class="btn btn-success" id="genImageBtn" onclick="doGenerateImage()">🎨 生成图片</button>
+      <button class="btn btn-outline btn-sm" onclick="copyPrompt()">📋 复制提示词</button>
+    </div>
+    <div id="imageStatus" class="hidden" style="margin-top:16px"></div>
+    <div id="imageResult" class="hidden" style="margin-top:16px"></div>
+  </div>
+
+</div>
+
+<script>
+// ── 状态 ──
+let uploadedFile = null;
+let productData = null;
+let currentUsage = 'main';
+let currentPlatform = 'taobao';
+let currentPrompts = {};
+
+// ── 上传 ──
+const uploadZone = document.getElementById('uploadZone');
+uploadZone.addEventListener('dragover', e=>{e.preventDefault();uploadZone.classList.add('dragover')});
+uploadZone.addEventListener('dragleave', ()=>uploadZone.classList.remove('dragover'));
+uploadZone.addEventListener('drop', e=>{
+  e.preventDefault();uploadZone.classList.remove('dragover');
+  const f=e.dataTransfer.files[0];if(f&&f.type.startsWith('image/'))setFile(f);
+});
+
+function handleFile(e){const f=e.target.files[0];if(f)setFile(f)}
+function setFile(f){
+  uploadedFile=f;document.getElementById('recognizeBtn').disabled=false;
+  const r=new FileReader();r.onload=e=>{
+    document.getElementById('uploadPlaceholder').classList.add('hidden');
+    const img=document.getElementById('previewImg');img.src=e.target.result;img.classList.remove('hidden');
+  };r.readAsDataURL(f);
+}
+
+// ── 计时器工具 ──
+function startTimer(el,prefix){let sec=0;const i=setInterval(()=>{sec++;el.innerHTML='<div class="status-row"><span class="spinner"></span> '+prefix+'（'+sec+'秒）</div>';},1000);return ()=>clearInterval(i);}
+
+// ── 识别 ──
+async function doRecognize(){
+  if(!uploadedFile)return;
+  const btn=document.getElementById('recognizeBtn');const s=document.getElementById('recognizeStatus');
+  btn.disabled=true;s.classList.remove('hidden');
+  const stop=startTimer(s,'正在分析图片');
+  try{
+    const fd=new FormData();fd.append('file',uploadedFile);
+    const r=await fetch('/api/recognize?mode=single',{method:'POST',body:fd});const d=await r.json();
+    stop();if(d.success&&d.product){s.innerHTML='<div class="status-row">✅ 识别成功</div>';productData=d.product;showProduct();switchCards()}
+    else{s.innerHTML=`<div class="status-row" style="color:#991b1b">❌ ${d.error||'识别失败'}</div>`}
+  }catch(e){stop();s.innerHTML=`<div class="status-row" style="color:#991b1b">❌ 网络错误: ${e.message}</div>`}
+  btn.disabled=false;btn.innerHTML='识别商品';
+}
+
+function showProduct(){
+  const p=productData,el=document.getElementById('recognizeResult');el.classList.remove('hidden');
+  const tags=p.selling_points.map(s=>`<span class="selling-point-tag">${s.dimension}: ${s.description}</span>`).join('');
+  const pc=p.platform_copy||{};
+  el.innerHTML=`
+    <div style="display:flex;gap:16px;flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <div style="font-weight:600;margin-bottom:8px">📂 ${p.category}</div>
+        <div style="font-size:20px;font-weight:700;color:#1a1a2e;margin-bottom:8px">${p.product_name}</div>
+        <div>${tags}</div>
+      </div>
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:13px;color:#666">🛒 淘宝</div><div style="font-size:13px;margin-bottom:8px">${(pc.taobao||[]).join('<br>')||'—'}</div>
+        <div style="font-size:13px;color:#666">📦 京东</div><div style="font-size:13px;margin-bottom:8px">${(pc.jd||[]).join('<br>')||'—'}</div>
+        <div style="font-size:13px;color:#666">🎵 抖音</div><div style="font-size:13px">${(pc.douyin||[]).join('<br>')||'—'}</div>
+      </div>
+    </div>
+    <details style="margin-top:12px"><summary style="cursor:pointer;color:#4f46e5;font-size:13px">查看完整 JSON</summary>
+    <div class="json-view">${JSON.stringify(p,null,2)}</div></details>`;
+}
+
+function switchCards(){
+  document.getElementById('card2').classList.remove('hidden');
+  document.getElementById('card3').classList.remove('hidden');
+  document.getElementById('step1').classList.add('done');document.getElementById('step1').classList.remove('active');
+  document.getElementById('step2').classList.add('active');
+}
+
+// ── 用途切换 ──
+document.getElementById('usageTabs').addEventListener('click',e=>{
+  if(!e.target.classList.contains('tab'))return;
+  document.querySelectorAll('#usageTabs .tab').forEach(t=>t.classList.remove('active'));
+  e.target.classList.add('active');currentUsage=e.target.dataset.usage;
+});
+
+// ── 平台切换 ──
+document.getElementById('platformTabs').addEventListener('click',e=>{
+  if(!e.target.classList.contains('tab'))return;
+  document.querySelectorAll('#platformTabs .tab').forEach(t=>t.classList.remove('active'));
+  e.target.classList.add('active');currentPlatform=e.target.dataset.platform;
+});
+
+// ── 提示词 ──
+async function doGeneratePrompt(){
+  if(!productData)return alert('请先上传图片并识别');
+  const btn=document.getElementById('genPromptBtn');let sec=0;const ti=setInterval(()=>{sec++;btn.innerHTML='<span class="spinner"></span> 生成中（'+sec+'秒）';},1000);
+  try{
+    const r=await fetch('/api/generate-prompt',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_name:productData.product_name,category:productData.category,selling_points:productData.selling_points,platform_copy:productData.platform_copy||null,usage_type:currentUsage,platform:currentPlatform||null})});
+    const d=await r.json();
+    clearInterval(ti);if(d.success&&d.prompt){currentPrompts[currentUsage]=d.prompt.full_prompt;showPrompt(d.prompt.full_prompt,currentUsage);switchToCard3()}
+    else alert('生成失败: '+(d.error||'未知'))
+  }catch(e){clearInterval(ti);alert('请求失败: '+e.message)}
+  btn.innerHTML='生成提示词';btn.disabled=false;
+}
+
+async function doGenerateAll(){
+  if(!productData)return alert('请先上传图片并识别');
+  const btn=event.target;let sec=0;const ti=setInterval(()=>{sec++;btn.innerHTML='<span class="spinner"></span> 生成中（'+sec+'秒）';},1000);
+  try{
+    const r=await fetch('/api/generate-all-prompts',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_name:productData.product_name,category:productData.category,selling_points:productData.selling_points,platform_copy:productData.platform_copy||null,platform:currentPlatform||null})});
+    const d=await r.json();
+    clearInterval(ti);if(d.success){currentPrompts=d.prompts;showPrompt(currentPrompts[currentUsage]||Object.values(currentPrompts)[0],currentUsage);switchToCard3()}
+  }catch(e){clearInterval(ti);alert('请求失败: '+e.message)}
+  btn.innerHTML='一键三种';btn.disabled=false;
+}
+
+function showPrompt(text,usage){
+  const el=document.getElementById('promptResult');el.classList.remove('hidden');
+  const labels={main:'主图',scene:'场景图',selling_point:'卖点图'};
+  el.innerHTML=`<div style="margin-bottom:8px"><span class="badge badge-info">${labels[usage]||usage}</span> <span style="font-size:13px;color:#999">${text.length} 字符</span></div><div class="prompt-display">${text}</div>`;
+}
+
+function switchToCard3(){
+  document.getElementById('step2').classList.add('done');document.getElementById('step2').classList.remove('active');
+  document.getElementById('step3').classList.add('active');
+}
+
+// ── 生图 ──
+async function doGenerateImage(){
+  const prompt=Object.values(currentPrompts).find(p=>p);
+  if(!prompt)return alert('请先生成提示词');
+  const btn=document.getElementById('genImageBtn');const s=document.getElementById('imageStatus');
+  btn.disabled=true;s.classList.remove('hidden');
+  const stop=startTimer(s,'调用即梦 Seedream 生成图片');
+  try{
+    const refImg=document.getElementById('previewImg').src||null;const r=await fetch('/api/generate-image',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product_name:productData.product_name,category:productData.category,selling_points:productData.selling_points,platform_copy:productData.platform_copy||null,usage_type:currentUsage,platform:currentPlatform||null,reference_image:refImg})});
+    const d=await r.json();
+    const el=document.getElementById('imageResult');el.classList.remove('hidden');
+    stop();if(d.success&&d.image_b64){s.innerHTML='<div class="status-row">✅ 生图成功</div>';el.innerHTML=`<img src="data:image/png;base64,${d.image_b64}" class="result-image" /><div style="margin-top:8px;font-size:13px;color:#666">右键可保存图片</div>`}
+    else if(d.success&&d.image_url){s.innerHTML='<div class="status-row">✅ 生图成功</div>';el.innerHTML=`<img src="${d.image_url}" class="result-image" /><div style="margin-top:8px;font-size:13px;color:#666">图片URL 24h有效</div>`}
+    else{s.innerHTML=`<div class="status-row" style="color:#991b1b">❌ ${d.error||'生图失败（请确认 ARK_API_KEY 已配置）'}</div>`}
+  }catch(e){stop();s.innerHTML=`<div class="status-row" style="color:#991b1b">❌ 网络错误: ${e.message}</div>`}
+  btn.innerHTML='🎨 生成图片';btn.disabled=false;
+}
+
+function copyPrompt(){
+  const p=Object.values(currentPrompts).find(p=>p);
+  if(p){navigator.clipboard.writeText(p).then(()=>alert('已复制'))}
+}
+</script>
+</body>
+</html>

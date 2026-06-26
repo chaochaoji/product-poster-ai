@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "product-ai"
+version = "1.0.0"
+description = "电商商品属性识别与AI生图提示词生成系统"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+
+dependencies = [
+    "openai>=1.0",
+    "pydantic>=2.0",
+    "pyyaml>=6.0",
+    "pillow>=10.0",
+    "fastapi>=0.100",
+    "uvicorn>=0.20",
+    "python-multipart>=0.0.5",
+    "python-dotenv>=1.0",
+    "langgraph>=0.2",
+    "jieba>=0.42",
+    "pandas>=2.0",
+    "scikit-learn>=1.3",
+    "tqdm>=4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21",
+    "httpx>=0.24",
+]
+
+[project.scripts]
+product-ai = "product_ai.api:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["product_ai*", "fullmarks*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
