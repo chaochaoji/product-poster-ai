@@ -126,7 +126,14 @@ def recognize_product(state: RecognitionState) -> dict:
                 {"type": "image_url", "image_url": {"url": state["image_b64"]}},
             ]},
         ],
-        temperature=0.3, max_tokens=2048, timeout=60,
+        # 控制生成随机性的参数（越低越确定，0.3 表示较稳定输出）
+        temperature=0.3,
+
+        # 限制最大输出 token 数（2048 tokens ≈ 1500+ 中文字符）
+        max_tokens=2048,
+
+        # 请求超时时间（单位：秒）
+        timeout=60,
     )
 
     content = resp.choices[0].message.content or ""

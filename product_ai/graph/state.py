@@ -13,14 +13,21 @@ class RecognitionState(TypedDict):
     image_b64: str  # base64 data URL
 
     # Agent 1 输出（多模态识别）
+    # 类别
     category: str
+    # 商品名称
     product_name: str
+    # 卖点
     selling_points: list[dict]  # [{dimension, description, priority}]
+    # 商品主题描述
     visual_description: str
 
     # Agent 2 输出（三平台文案，并发）
+    # 淘宝
     taobao_copy: list[str]
+    # 京东
     jd_copy: list[str]
+    # 抖音
     douyin_copy: list[str]
 
     # 聚合输出
